@@ -1,0 +1,21 @@
+# --- Git && IDE ---
+/.github            export-ignore
+/.idea              export-ignore
+.gitattributes      export-ignore
+.gitignore          export-ignore
+.editorconfig       export-ignore
+
+# --- TESTS ---
+/tests              export-ignore
+/infection          export-ignore
+phpunit.xml         export-ignore
+
+# --- LINTERS ---
+infection.json5     export-ignore
+phpcs.xml           export-ignore
+phpmd.xml           export-ignore
+rector.php          export-ignore
+phpstan.neon        export-ignore
+
+# --- LOCK ---
+composer.lock       export-ignore

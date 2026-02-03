@@ -1,0 +1,17 @@
+/vendor/
+.env
+
+# PHPUnit & Coverage
+/coverage-report
+/coverage.xml
+/clover.xml
+.phpunit.cache
+.phpunit.result.cache
+.phpstan.result.cache
+
+# Infection
+/infection/
+
+# Local scripts
+/local/
+/var/

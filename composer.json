@@ -1,0 +1,85 @@
+{
+  "name": "sorelvi/stream-reader",
+  "description": "Stream reader with support for single-byte and multi-byte encodings",
+  "minimum-stability": "stable",
+  "license": "Apache-2.0",
+  "keywords": [
+    "stream",
+    "reader",
+    "single-byte",
+    "multi-byte",
+    "encoding",
+    "charset",
+    "detection",
+    "chunk",
+    "ANSI",
+    "SBCS",
+    "VBCS",
+    "UTF",
+    "UTF-8",
+    "UTF-16",
+    "UTF-32"
+  ],
+  "type": "library",
+  "authors": [
+    {
+      "name": "Sorelvi",
+      "email": "open-source@sorelvi.io",
+      "homepage": "https://sorelvi.io",
+      "role": "Owner"
+    },
+    {
+      "name": "Vitalii Sorokin",
+      "email": "sorokinws@gmail.com",
+      "role": "Lead Developer"
+    }
+  ],
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "infection/infection": "^0.29.8",
+    "mikey179/vfsstream": "^1.6",
+    "php-mock/php-mock-phpunit": "^2.15",
+    "phpmd/phpmd": "^2.15",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-phpunit": "^2.0",
+    "phpunit/phpunit": "^10.0",
+    "slevomat/coding-standard": "^8.27",
+    "squizlabs/php_codesniffer": "^4.0",
+    "ext-pcov": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Sorelvi\\StreamReader\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Sorelvi\\StreamReader\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "infection/extension-installer": true
+    }
+  },
+  "scripts": {
+    "stan": "vendor/bin/phpstan analyse --memory-limit=1G",
+    "cs-check": "vendor/bin/phpcs",
+    "cs-fix": "vendor/bin/phpcbf || echo There are irreparable errors!",
+    "test": "vendor/bin/phpunit --coverage-xml=var/coverage-xml --log-junit=var/junit.xml",
+    "test-coverage-report": "vendor/bin/phpunit --coverage-html coverage-report",
+    "infection": "vendor/bin/infection --threads=10 --only-covered",
+    "mess": "vendor/bin/phpmd src text phpmd.xml",
+    "check": [
+      "@cs-fix",
+      "@cs-check",
+      "@mess",
+      "@stan",
+      "@test"
+    ]
+  }
+}
