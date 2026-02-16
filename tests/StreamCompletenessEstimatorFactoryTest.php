@@ -36,16 +36,16 @@ class StreamCompletenessEstimatorFactoryTest extends TestCase
      */
     public static function provideCreateFixedByteData(): iterable
     {
-        yield [Preset::byte1, 1];
-        yield [Preset::byte2, 2];
-        yield [Preset::byte3, 3];
-        yield [Preset::byte4, 4];
-        yield [Preset::byte5, 5];
-        yield [Preset::byte6, 6];
-        yield [Preset::byte7, 7];
-        yield [Preset::byte8, 8];
-        yield [Preset::byte9, 9];
-        yield [Preset::byte10, 10];
+        yield [Preset::BYTE1, 1];
+        yield [Preset::BYTE2, 2];
+        yield [Preset::BYTE3, 3];
+        yield [Preset::BYTE4, 4];
+        yield [Preset::BYTE5, 5];
+        yield [Preset::BYTE6, 6];
+        yield [Preset::BYTE7, 7];
+        yield [Preset::BYTE8, 8];
+        yield [Preset::BYTE9, 9];
+        yield [Preset::BYTE10, 10];
     }
 
 

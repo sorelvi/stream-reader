@@ -32,12 +32,12 @@ final class HandleContext
         $context->needMoreBytes = self::getPositiveIntValue(
             "needMoreBytes",
             $data,
-            ErrorCode::PARAMETER_NEED_MORE_BYTES_VALUE_MUST_BE_INT_POSITIVE
+            ErrorCode::PARAMETER_NEED_MORE_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE
         );
         $context->totalReadBytes = self::getPositiveIntValue(
             "totalReadBytes",
             $data,
-            ErrorCode::PARAMETER_TOTAL_READ_BYTES_VALUE_MUST_BE_INT_POSITIVE
+            ErrorCode::PARAMETER_TOTAL_READ_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE
         );
         $contextInput = $data["context"] ?? [];
 
@@ -60,7 +60,7 @@ final class HandleContext
                 if ($value !== null && !is_scalar($value)) {
                     throw new InvalidArgumentException(
                         'Context parameter must be a scalar value or null',
-                        ErrorCode::PARAMETER_CONTEXT_VALUE_MUST_BY_SCALAR->value
+                        ErrorCode::PARAMETER_CONTEXT_VALUE_MUST_BE_SCALAR->value
                     );
                 }
 
@@ -82,7 +82,7 @@ final class HandleContext
         if (array_key_exists($key, $data)) {
             if (!is_int($data[$key]) || $data[$key] < 0) {
                 throw new InvalidArgumentException(
-                    "$key value must be a scalar value.",
+                    "$key value must be a non-negative integer.",
                     $errorNotInt->value
                 );
             }

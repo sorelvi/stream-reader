@@ -13,16 +13,16 @@ namespace Sorelvi\StreamReader\Enum;
 
 enum Preset
 {
-    case byte1;
-    case byte2;
-    case byte3;
-    case byte4;
-    case byte5;
-    case byte6;
-    case byte7;
-    case byte8;
-    case byte9;
-    case byte10;
+    case BYTE1;
+    case BYTE2;
+    case BYTE3;
+    case BYTE4;
+    case BYTE5;
+    case BYTE6;
+    case BYTE7;
+    case BYTE8;
+    case BYTE9;
+    case BYTE10;
     case UTF8;
     case UTF16;
     case UTF16LE;

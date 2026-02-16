@@ -13,6 +13,7 @@ namespace Sorelvi\StreamReader;
 
 use Generator;
 use Sorelvi\StreamReader\Enum\Preset;
+use Sorelvi\StreamReader\Exception\CanNotReadZeroChunk;
 use Sorelvi\StreamReader\Exception\CanNotRestoreReadingStream;
 use Sorelvi\StreamReader\Exception\ChunkLengthMustBePositive;
 use Sorelvi\StreamReader\Exception\ErrorCode;
@@ -80,6 +81,11 @@ final class Reader implements ReaderInterface
     public function readChunk(?int $chunkLength = null): Generator
     {
         $chunkLength = $chunkLength ?? $this->chunkLength;
+
+        if ($chunkLength < 1) {
+            throw  new CanNotReadZeroChunk();
+        }
+
         $stream = $this->stream;
 
         while (!$stream->isEndOfStream()) {
@@ -105,6 +111,10 @@ final class Reader implements ReaderInterface
             $this->context->getTotalReadBytes() -
             $this->stream->getCurrentPosition()
         );
+
+        if ($this->stream->getCurrentPosition() !== $this->context->getTotalReadBytes()) {
+            throw new CanNotRestoreReadingStream(code: ErrorCode::SOURCE_CAN_NOT_SKIP_TO_TARGET->value);
+        }
     }
 
     private function handleChunk(
@@ -126,12 +136,19 @@ final class Reader implements ReaderInterface
             $currentAddRead += $context->needMoreBytes;
 
             if ($currentAddRead > $maxAddRead) {
-                throw new StreamDamaged(ErrorCode::TO_LONG_BYTE_CHAIN);
+                throw new StreamDamaged(ErrorCode::TOO_LONG_BYTE_CHAIN);
             }
 
             $addChunk = $resource->read($context->needMoreBytes);
 
             $chunk .= $addChunk;
+        }
+
+        if ($context->needMoreBytes > 0) {
+            throw new StreamDamaged(
+                ErrorCode::INCOMPLETE_SEQUENCE_AT_EOF,
+                'Stream ended with incomplete character sequence'
+            );
         }
 
         return $chunk;

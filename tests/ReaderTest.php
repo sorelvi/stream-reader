@@ -14,6 +14,7 @@ namespace Sorelvi\StreamReader\Tests;
 use PHPUnit\Framework\TestCase;
 use Sorelvi\StreamReader\Estimator\FixedByte;
 use Sorelvi\StreamReader\Estimator\Utf8;
+use Sorelvi\StreamReader\Exception\CanNotReadZeroChunk;
 use Sorelvi\StreamReader\Exception\CanNotRestoreReadingStream;
 use Sorelvi\StreamReader\Exception\ChunkLengthMustBePositive;
 use Sorelvi\StreamReader\Exception\ErrorCode;
@@ -21,6 +22,7 @@ use Sorelvi\StreamReader\Exception\MaxAddReadMustBeZeroOrPositive;
 use Sorelvi\StreamReader\Exception\StreamDamaged;
 use Sorelvi\StreamReader\HandleContext;
 use Sorelvi\StreamReader\Reader;
+use Sorelvi\StreamReader\Stream;
 use Sorelvi\StreamReader\Tests\Mock\MockEstimator;
 use Sorelvi\StreamReader\Tests\Mock\MockInternalStream;
 
@@ -150,6 +152,19 @@ class ReaderTest extends TestCase
         new Reader($stream3, $estimator3, $context3);
     }
 
+    public function testRestoreContextShortSource(): void
+    {
+        $stream1 = Stream::createForString('TestError');
+        $context1 = new HandleContext();
+        $context1->addTotalReadBytes(10);
+        $estimator1 = new Utf8();
+
+        $this->expectException(CanNotRestoreReadingStream::class);
+        $this->expectExceptionCode(ErrorCode::SOURCE_CAN_NOT_SKIP_TO_TARGET->value);
+
+        new Reader($stream1, $estimator1, $context1);
+    }
+
     public function testReadChunkEmptySource(): void
     {
         $stream = new MockInternalStream();
@@ -203,8 +218,25 @@ class ReaderTest extends TestCase
 
         $mockEstimator->handleResults = [1,1,1,1,1];
         $this->expectException(StreamDamaged::class);
-        $this->expectExceptionCode(ErrorCode::TO_LONG_BYTE_CHAIN->value);
+        $this->expectExceptionCode(ErrorCode::TOO_LONG_BYTE_CHAIN->value);
         $reader->readChunk()->current();
+    }
+
+    public function testReadIncompleteSequence(): void
+    {
+        $reader = Reader::createForString("Hello\xF0\x80\xBF");
+        $reader->setChunkLength(6);
+        $this->expectException(StreamDamaged::class);
+        $this->expectExceptionCode(ErrorCode::INCOMPLETE_SEQUENCE_AT_EOF->value);
+        $reader->readChunk()->current();
+    }
+
+    public function testReadZeroChunk(): void
+    {
+        $reader = Reader::createForString('HelloWorld');
+        $this->assertEquals('H', $reader->readChunk(1)->current());
+        $this->expectException(CanNotReadZeroChunk::class);
+        $reader->readChunk(0)->current();
     }
 
     private function createFile(string $content): string

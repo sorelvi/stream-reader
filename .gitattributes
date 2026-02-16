@@ -8,7 +8,12 @@
 # --- TESTS ---
 /tests              export-ignore
 /infection          export-ignore
-phpunit.xml         export-ignore
+/coverage-report    export-ignore
+/var                export-ignore
+/local              export-ignore
+
+/.phpunit.result.cache  export-ignore
+phpunit.xml             export-ignore
 
 # --- LINTERS ---
 infection.json5     export-ignore

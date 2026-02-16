@@ -20,4 +20,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Comprehensive unit tests covering edge cases.
 - **Infrastructure:**
     - GitHub Actions Workflow for CI (Tests, Linting, Static Analysis).
-    - Dependabot configuration for automated dependency updates.

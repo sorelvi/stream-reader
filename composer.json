@@ -1,7 +1,6 @@
 {
   "name": "sorelvi/stream-reader",
   "description": "Stream reader with support for single-byte and multi-byte encodings",
-  "minimum-stability": "stable",
   "license": "Apache-2.0",
   "keywords": [
     "stream",
@@ -21,6 +20,7 @@
     "UTF-32"
   ],
   "type": "library",
+  "homepage": "https://sorelvi.io",
   "authors": [
     {
       "name": "Sorelvi",
@@ -46,8 +46,7 @@
     "phpstan/phpstan-phpunit": "^2.0",
     "phpunit/phpunit": "^10.0",
     "slevomat/coding-standard": "^8.27",
-    "squizlabs/php_codesniffer": "^4.0",
-    "ext-pcov": "*"
+    "squizlabs/php_codesniffer": "^4.0"
   },
   "autoload": {
     "psr-4": {
