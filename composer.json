@@ -1,5 +1,4 @@
 {
-  "version": "1.0.0",
   "name": "sorelvi/stream-reader",
   "description": "Stream reader with support for single-byte and multi-byte encodings",
   "license": "Apache-2.0",
