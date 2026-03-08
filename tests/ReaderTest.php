@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Sorelvi\StreamReader\Tests;
 
+use phpmock\phpunit\PHPMock;
 use PHPUnit\Framework\TestCase;
 use Sorelvi\StreamReader\Estimator\FixedByte;
 use Sorelvi\StreamReader\Estimator\Utf8;
@@ -28,6 +29,8 @@ use Sorelvi\StreamReader\Tests\Mock\MockInternalStream;
 
 class ReaderTest extends TestCase
 {
+    use PHPMock;
+
     /** @var string[] */
     private array $files = [];
 
@@ -152,8 +155,14 @@ class ReaderTest extends TestCase
         new Reader($stream3, $estimator3, $context3);
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function testRestoreContextShortSource(): void
     {
+        $fseek = $this->getFunctionMock('Sorelvi\StreamReader', 'stream_get_meta_data');
+        $fseek->expects($this->once())->willReturn(['seekable' => false]);
         $stream1 = Stream::createForString('TestError');
         $context1 = new HandleContext();
         $context1->addTotalReadBytes(10);

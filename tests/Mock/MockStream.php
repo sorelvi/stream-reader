@@ -27,6 +27,8 @@ class MockStream
     public static int $currentEmptyReads = 0;
     public static bool $eofRead = false;
 
+    public mixed $context;
+
 
     public static function setContent(string $data): void
     {

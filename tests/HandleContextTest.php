@@ -75,7 +75,7 @@ class HandleContextTest extends TestCase
                 ],
             ],
             [
-                'needMoreBytes' => 1,
+                'needMoreBytes' => 0,
                 'totalReadBytes' => 3,
                 'context' => [
                     [
@@ -141,28 +141,12 @@ class HandleContextTest extends TestCase
             ErrorCode::PARAMETER_CONTEXT_VALUE_MUST_BE_SCALAR,
         ];
 
-        yield 'case 4' => [
-            [
-                'needMoreBytes' => false,
-            ],
-            InvalidArgumentException::class,
-            ErrorCode::PARAMETER_NEED_MORE_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE,
-        ];
-
         yield 'case 6' => [
             [
                 'totalReadBytes' => false,
             ],
             InvalidArgumentException::class,
             ErrorCode::PARAMETER_TOTAL_READ_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE,
-        ];
-
-        yield 'case 7' => [
-            [
-                'needMoreBytes' => -1,
-            ],
-            InvalidArgumentException::class,
-            ErrorCode::PARAMETER_NEED_MORE_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE,
         ];
 
         yield 'case 9' => [

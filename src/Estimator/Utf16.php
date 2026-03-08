@@ -17,7 +17,7 @@ use Sorelvi\StreamReader\Exception\ErrorCode;
 use Sorelvi\StreamReader\Exception\StreamDamaged;
 use Sorelvi\StreamReader\HandleContext;
 
-class Utf16 implements EstimatorInterface
+final class Utf16 implements EstimatorInterface
 {
     private const CONTEXT_KEY_IS_LE = 'is_le';
 

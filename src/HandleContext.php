@@ -29,11 +29,6 @@ final class HandleContext
     public static function fromArray(array $data): self
     {
         $context = new self();
-        $context->needMoreBytes = self::getPositiveIntValue(
-            "needMoreBytes",
-            $data,
-            ErrorCode::PARAMETER_NEED_MORE_BYTES_VALUE_MUST_BE_INT_ZERO_POSITIVE
-        );
         $context->totalReadBytes = self::getPositiveIntValue(
             "totalReadBytes",
             $data,
@@ -98,7 +93,7 @@ final class HandleContext
     public function toArray(): array
     {
         return [
-            'needMoreBytes' => $this->needMoreBytes,
+            'needMoreBytes' => 0,
             'totalReadBytes' => $this->totalReadBytes,
             'context' => $this->context,
         ];

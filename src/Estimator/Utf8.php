@@ -16,7 +16,7 @@ use Sorelvi\StreamReader\Exception\ErrorCode;
 use Sorelvi\StreamReader\Exception\StreamDamaged;
 use Sorelvi\StreamReader\HandleContext;
 
-class Utf8 implements EstimatorInterface
+final class Utf8 implements EstimatorInterface
 {
     private const MAX_TAIL_BYTES = 3;
 

@@ -8,7 +8,7 @@ This library follows strict quality standards to ensure reliability, type safety
 
 ### 1. Requirements
 
-PHP 8.1 or higher
+PHP 8.2 or higher
 
 Composer
 
@@ -34,7 +34,7 @@ Strict type checking is enabled.
 
 Do not fix style manually. We have automated tools for that.
 
-Run composer fix before committing.
+Run `composer cs-fix` before committing.
 
 ### Mutation Testing (Infection) We don't just check code coverage; we check test quality.
 
@@ -46,17 +46,17 @@ If you add logic, you must add tests that "kill" any mutations of that logic.
 
 We have defined convenient Composer scripts to help you.
 
-```bash 
+```bash
 composer cs-fix
 ```
-Runs Rector and PHPCBF to auto-fix code style. Frequently, before running tests.
+Runs PHPCBF to auto-fix code style. Run frequently, before committing.
 
-```bash 
+```bash
 composer test
 ```
 Runs PHPUnit tests. After every change.
 
-```bash 
+```bash
 composer check
 ```
 Runs All Checks (CS, Stan, Mess Detector, Tests). Must pass before pushing.
@@ -64,7 +64,7 @@ Runs All Checks (CS, Stan, Mess Detector, Tests). Must pass before pushing.
 ```bash
 composer infection
 ```
-Runs Mutation Testing. Before creating a Pull Request.  
+Runs Mutation Testing. Before creating a Pull Request.
 
 ## Pull Request Checklist
 
@@ -72,11 +72,11 @@ Before submitting a Pull Request, please ensure the following:
 
 * [ ] You have added tests for any new functionality.
 
-* [ ] Mutation Score is 100% (or at least not lower than master). Run vendor/bin/infection to check.
+* [ ] Mutation Score is 100% (or at least not lower than master). Run `composer infection` to check.
 
-* [ ] You have run composer fix to ensure code style consistency.
+* [ ] You have run `composer cs-fix` to ensure code style consistency.
 
-* [ ] composer check passes locally without errors.
+* [ ] `composer check` passes locally without errors.
 
 * [ ] You have updated the README.md if API changes were made.
 

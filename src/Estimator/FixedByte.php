@@ -14,7 +14,7 @@ namespace Sorelvi\StreamReader\Estimator;
 use Sorelvi\StreamReader\EstimatorInterface;
 use Sorelvi\StreamReader\HandleContext;
 
-class FixedByte implements EstimatorInterface
+final class FixedByte implements EstimatorInterface
 {
     public function __construct(private readonly int $lengthOfChar)
     {

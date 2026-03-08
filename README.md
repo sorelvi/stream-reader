@@ -1,7 +1,9 @@
 # Sorelvi Stream Reader
 
-![PHP Version](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
+![PHP Version](https://img.shields.io/badge/php-%3E%3D8.2-777bb4.svg)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
+[![CI](https://github.com/sorelvi/stream-reader/actions/workflows/tests.yml/badge.svg)](https://github.com/sorelvi/stream-reader/actions/workflows/tests.yml)
+[![Packagist](https://img.shields.io/packagist/v/sorelvi/stream-reader.svg)](https://packagist.org/packages/sorelvi/stream-reader)
 
 *Industrial-grade, memory-efficient streaming reader for PHP.*
 
@@ -15,11 +17,14 @@ Reading gigabytes of text data (logs, SQL dumps, CSVs) in PHP can be tricky. Sta
   * **UTF-8** (optimized bitwise scanning)
   * **UTF-16** (LE/BE auto-detection via BOM or manual config)
   * **UTF-32**
-  * **Fixed-byte encodings** (ASCII, Windows-1251, ISO-8859-1 via `byte1` preset)
+  * **Fixed-byte encodings** (ASCII, Windows-1251, ISO-8859-1 via `Preset::BYTE1`)
+  * **Fixed-width protocols** (`Preset::BYTE2` through `Preset::BYTE10`)
+- **Network/Pipe Ready**: Built-in retry logic handles slow or non-blocking network streams.
 - **Resumable**: Architecture supports pausing and resuming reading via `HandleContext`.
+- **Extensible**: Full support for custom `StreamInterface` and `EstimatorInterface` implementations.
 
 ## Requirements
-* PHP 8.1 or higher
+* PHP 8.2 or higher
 
 ## Installation
 
@@ -33,11 +38,12 @@ The easiest way to read a file is using the static factory method with a `Preset
 ```php
 use Sorelvi\StreamReader\Reader;
 use Sorelvi\StreamReader\Enum\Preset;
+use Sorelvi\StreamReader\Exception\StreamReaderException;
 
 try {
     // 1. Create a reader for a UTF-8 file
     $reader = Reader::createForFile('/path/to/huge_dump.sql');
-    
+
     // Optional: Adjust chunk size (default is 64KB)
     $reader->setChunkLength(8192); // 8KB
 
@@ -47,16 +53,15 @@ try {
         // e.g. send to database or parse CSV line
         process_data($chunk);
     }
-} catch (\Exception $e) {
-    // Handles IO errors or corrupted streams explicitly
-    error_log($e->getMessage());
+} catch (StreamReaderException $e) {
+    // Handles IO errors, corrupted streams, and encoding violations
+    error_log('[' . $e->getCode() . '] ' . $e->getMessage());
 }
 ```
 
 ### Reading from String
 ```php
 use Sorelvi\StreamReader\Reader;
-use Sorelvi\StreamReader\Enum\Preset;
 
 $sql = "INSERT INTO ... 🚀"; // String with emojis
 $reader = Reader::createForString($sql);
@@ -64,6 +69,16 @@ $reader = Reader::createForString($sql);
 foreach ($reader->readChunk() as $chunk) {
     echo $chunk;
 }
+```
+
+### Per-call Chunk Size
+The `readChunk()` method accepts an optional chunk size that overrides the instance default for that single call:
+```php
+$reader = Reader::createForString('Hello World');
+$reader->setChunkLength(2); // default: 2 bytes
+
+$first  = $reader->readChunk(1)->current(); // 'H'  — one-off override
+$second = $reader->readChunk()->current();  // 'el' — uses default 2
 ```
 
 ### Integrity vs. Validation
@@ -99,9 +114,13 @@ foreach ($reader->readChunk() as $chunk) {
 ```
 
 ### Resume Reading (Context Management)
-The HandleContext tracks the number of bytes read. You can persist this state to resume reading later (e.g., between HTTP requests or background jobs).
+The `HandleContext` tracks the number of bytes read. You can persist this state to resume reading later (e.g., between HTTP requests or background jobs).
 
 ```php
+use Sorelvi\StreamReader\Reader;
+use Sorelvi\StreamReader\HandleContext;
+use Sorelvi\StreamReader\Enum\Preset;
+
 // Step 1: Read some data
 $context = new HandleContext();
 $reader = Reader::createForFile('large.log', $context, Preset::UTF16);
@@ -109,13 +128,13 @@ $reader = Reader::createForFile('large.log', $context, Preset::UTF16);
 foreach ($reader->readChunk() as $chunk) {
     process($chunk);
     if (should_pause()) {
-        break; 
+        break;
     }
 }
 
 // Step 2: Save context
-$bytesRead = $context->toArray();
-save_to_db($bytesRead);
+$state = $context->toArray();
+save_to_db($state);
 
 // --- Later ---
 
@@ -126,33 +145,163 @@ $newContext = HandleContext::fromArray(load_from_db());
 $reader = Reader::createForFile('large.log', $newContext, Preset::UTF16);
 ```
 
+#### HandleContext API
+| Method | Description |
+|--------|-------------|
+| `getTotalReadBytes(): int` | Returns total bytes consumed so far. |
+| `addTotalReadBytes(int): void` | Increments the byte counter. |
+| `setTotalReadBytes(int): void` | Overrides the byte counter. |
+| `resetTotalReadBytes(): void` | Resets counter to zero. |
+| `toArray(): array` | Serializes context to a plain array (for persistence). |
+| `fromArray(array): self` | Restores context from a previously serialized array. |
+| `setParam(string $part, string $key, scalar\|null): self` | Stores arbitrary state (used internally by estimators). |
+| `getParam(string $part, string $key, $default): scalar\|null` | Retrieves stored state. |
+| `hasParam(string $part, string $key): bool` | Checks if a parameter is stored. |
+
 ### Supporting UTF-16
-The reader intelligently handles UTF-16 endianness.
-1. Checks for Byte Order Mark (BOM).
-1. Checks explicit encoding names (UTF-16LE, UTF-16BE).
-1. Falls back to RFC 2781 standards (Big Endian) if unknown.
-1. Correctly handles Surrogate Pairs (4-byte characters in UTF-16) to ensure they are not split.
+The reader intelligently handles UTF-16 endianness:
+1. Uses the explicitly configured endianness if `Preset::UTF16LE` or `Preset::UTF16BE` is specified.
+2. For `Preset::UTF16` (auto mode), detects endianness from the Byte Order Mark (BOM): `0xFF 0xFE` → LE, anything else → BE (per RFC 2781).
+3. Correctly handles Surrogate Pairs (4-byte characters in UTF-16) to ensure they are not split across chunks.
+4. The detected endianness is stored in `HandleContext` and reused on subsequent calls, ensuring consistency across resumed sessions.
 
 ```php
+// Auto-detect BOM
 $reader = Reader::createForFile('export_utf16.csv', null, Preset::UTF16);
+
+// Or specify explicitly
+$reader = Reader::createForFile('export_utf16le.csv', null, Preset::UTF16LE);
+```
+
+### Network and Pipe Streams
+When working with non-blocking or slow network streams, `fread` may return an empty string without reaching EOF. The `Stream` class handles this transparently with configurable retry logic.
+
+```php
+use Sorelvi\StreamReader\Stream;
+use Sorelvi\StreamReader\Reader;
+use Sorelvi\StreamReader\StreamCompletenessEstimatorFactory;
+use Sorelvi\StreamReader\Enum\Preset;
+
+$socket = fsockopen('tcp://example.com', 9000);
+
+$stream = new Stream($socket);
+$stream->setMaxEmptyAttempts(50);          // max retries on empty reads (default: 20)
+$stream->setAttemptsDelayMicroseconds(5000); // delay between retries in µs (default: 10000)
+
+$estimator = StreamCompletenessEstimatorFactory::create(Preset::UTF8);
+$reader = new Reader($stream, $estimator);
+
+foreach ($reader->readChunk() as $chunk) {
+    // ...
+}
+```
+
+If the stream returns empty data more times than `maxEmptyAttempts`, a `TooManyEmptyAttempts` exception is thrown.
+
+### Custom Estimator
+You can implement `EstimatorInterface` to support any custom encoding or fixed-width binary protocol.
+
+```php
+use Sorelvi\StreamReader\EstimatorInterface;
+use Sorelvi\StreamReader\HandleContext;
+use Sorelvi\StreamReader\Reader;
+
+class MyProtocolEstimator implements EstimatorInterface
+{
+    public function handle(string $buffer, HandleContext $context): int
+    {
+        // Return 0 if the buffer ends on a complete unit,
+        // or N > 0 to request N more bytes before yielding.
+        $remainder = strlen($buffer) % 7; // 7-byte fixed records
+        return $remainder ? 7 - $remainder : 0;
+    }
+
+    public function getMaxAddReadBytes(): int
+    {
+        return 6; // max bytes ever requested in one handle() call
+    }
+}
+
+$reader = Reader::createForFile('records.bin', null, new MyProtocolEstimator());
+```
+
+### Custom Stream
+You can implement `StreamInterface` to wrap any data source (e.g., in-memory buffers, S3 streams, database BLOBs).
+
+```php
+use Sorelvi\StreamReader\StreamInterface;
+
+class MyCustomStream implements StreamInterface
+{
+    public function isEndOfStream(): bool { /* ... */ }
+    public function read(int $length): string { /* ... */ }
+    public function skip(int $offset): void { /* ... */ }
+    public function getCurrentPosition(): int { /* ... */ }
+}
+
+$reader = new Reader(new MyCustomStream(), $estimator);
 ```
 
 ## Supported Presets
-Use the Sorelvi\StreamReader\Enum\Preset enum to select your encoding:
-- Preset::UTF8
-- Preset::UTF16 (Auto-detect BOM)
-- Preset::UTF16LE / Preset::UTF16BE
-- Preset::UTF32
-- Preset::byte1 (ASCII, Windows-1251, KOI8-R, etc.)
-- Preset::byte2 ... Preset::byte10 (Fixed-width custom protocols)
+Use the `Sorelvi\StreamReader\Enum\Preset` enum to select your encoding:
+
+| Preset | Description |
+|--------|-------------|
+| `Preset::UTF8` | Variable-width (1–4 bytes), bitwise scan. |
+| `Preset::UTF16` | Variable-width (2 or 4 bytes), BOM auto-detect. |
+| `Preset::UTF16LE` | UTF-16 Little Endian, explicit. |
+| `Preset::UTF16BE` | UTF-16 Big Endian, explicit. |
+| `Preset::UTF32` | Fixed 4-byte width. Equivalent to `Preset::BYTE4`. |
+| `Preset::BYTE1` | Fixed 1-byte (ASCII, Windows-1251, ISO-8859-*, KOI8-R, etc.). |
+| `Preset::BYTE2` | Fixed 2-byte width. |
+| `Preset::BYTE3` | Fixed 3-byte width. |
+| `Preset::BYTE4` | Fixed 4-byte width. |
+| `Preset::BYTE5`–`Preset::BYTE10` | Fixed 5–10 byte widths for custom binary protocols. |
+
+## Exception Reference
+All library exceptions extend `Sorelvi\StreamReader\Exception\StreamReaderException`.
+
+| Exception | Code | Thrown When |
+|-----------|------|-------------|
+| `FileNotAccessible` | 303–305 | File does not exist, is a directory, or is not readable. |
+| `IsNotStream` | — | Constructor receives a non-resource argument. |
+| `CanNotCreateStream` | — | `fopen()` fails internally. |
+| `CanNotReadZeroBytes` | — | `Stream::read()` called with `$length < 1`. |
+| `CanNotReadZeroChunk` | — | `Reader::readChunk()` called with `$chunkLength < 1`. |
+| `ChunkLengthMustBePositive` | — | `Reader::setChunkLength()` called with value `< 1`. |
+| `ErrorReadingFromStream` | 301, 302 | Stream became invalid or `fread()` returned `false`. |
+| `TooManyEmptyAttempts` | — | Empty-read retry limit exceeded (network/pipe streams). |
+| `StreamDamaged` | 101–107 | Invalid or incomplete byte sequence detected in stream. |
+| `CanNotRestoreReadingStream` | 306 | Context byte offset cannot be seeked to in the stream. |
+| `MaxAddReadMustBeZeroOrPositive` | — | Custom estimator returns a negative value from `getMaxAddReadBytes()`. |
+
+### ErrorCode Enum
+`Sorelvi\StreamReader\Exception\ErrorCode` provides integer codes for programmatic error handling:
+
+```php
+use Sorelvi\StreamReader\Exception\StreamDamaged;
+use Sorelvi\StreamReader\Exception\ErrorCode;
+
+try {
+    foreach ($reader->readChunk() as $chunk) { /* ... */ }
+} catch (StreamDamaged $e) {
+    match ($e->getCode()) {
+        ErrorCode::INCOMPLETE_SEQUENCE_AT_EOF->value  => handleTruncated(),
+        ErrorCode::ORPHAN_CONTINUATION_BYTE->value    => handleCorrupted(),
+        ErrorCode::INVALID_START_BYTE_DETECTED->value => handleInvalid(),
+        default => throw $e,
+    };
+}
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please ensure to run static analysis tools (`composer check`) before submitting.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full development workflow.
+
 ## License
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 Copyright 2026 Sorelvi.
-

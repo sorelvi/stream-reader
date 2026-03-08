@@ -19,7 +19,7 @@ use Sorelvi\StreamReader\Exception\FileNotAccessible;
 use Sorelvi\StreamReader\Exception\IsNotStream;
 use Sorelvi\StreamReader\Exception\TooManyEmptyAttempts;
 
-class Stream implements StreamInterface
+final class Stream implements StreamInterface
 {
     private const SEEK_SPEED = 262144;
     private const DEFAULT_READ_LENGTH = 65536;
